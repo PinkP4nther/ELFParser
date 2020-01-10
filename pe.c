@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <elf.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main()
 {
@@ -77,7 +79,7 @@ int main()
 		printf("[+] E_SHSTRNDX\n");
 		printf(" -> 0x%02x\n",header.e_shstrndx);
 
-		printf("[==============================]");
+		printf("[==============================]\n");
 		printf("[+] Program Headers\n\n");
 		
 		/*
@@ -85,30 +87,36 @@ int main()
 		 * Create pointer to Elf64 header struct
 		 * header start + program header offset member = first PH
 		 */
+		
+		fclose(file);
 
-		//Elf64_Ehdr hdr = (Elf64_Ehdr *) header;
-		//Elf64_Phdr *phdr = (Elf64_Phdr *)&header;
-		Elf64_Phdr *phdr;
+		file = fopen("./pe","rb");
+		if (file) {
+			
+			fseek(file,header.e_phoff,SEEK_CUR);
 
-		phdr = (Elf64_Phdr *)((char*)&header + header.e_phoff);
-		printf(" - %p\n",phdr);
-		printf(" - %p\n",header.e_phnum);
-		for (int i = 0; i < header.e_phnum; i++) {
-			printf("[+] PHeader %d @%p\n",i,phdr[i]);
-			printf(" p_type -> %08x\n",phdr[i].p_type);
-			printf(" p_flags -> %08x\n",phdr[i].p_flags);
-			printf(" p_offset -> %016p\n",phdr[i].p_offset);
-			printf(" p_vaddr -> %016p\n",phdr[i].p_vaddr);
-			printf(" p_paddr -> %016p\n",phdr[i].p_paddr);
-			printf(" p_filesz -> %016p\n",phdr[i].p_filesz);
-			printf(" p_memsz -> %016p\n",phdr[i].p_memsz);
-			printf(" p_align -> %016p\n",phdr[i].p_align);
+			Elf64_Phdr *phdr = malloc(sizeof(Elf64_Phdr)*header.e_phnum);
+			memset(phdr, '\0', sizeof(Elf64_Phdr)*header.e_phnum);
+			fread(phdr, header.e_phnum ,sizeof(Elf64_Phdr), file);
+
+			for (int i = 0; i < header.e_phnum; i++) {
+				printf("[+] PHeader %d @%p\n",i,phdr[i]);
+				printf(" p_type \t-> %08x\n",phdr[i].p_type);
+				printf(" p_flags \t-> %08x\n",phdr[i].p_flags);
+				printf(" p_offset \t-> %016p\n",phdr[i].p_offset);
+				printf(" p_vaddr \t-> %016p\n",phdr[i].p_vaddr);
+				printf(" p_paddr \t-> %016p\n",phdr[i].p_paddr);
+				printf(" p_filesz \t-> %016p\n",phdr[i].p_filesz);
+				printf(" p_memsz \t-> %016p\n",phdr[i].p_memsz);
+				printf(" p_align \t-> %016p\n",phdr[i].p_align);
+			}
+
+			//printf("HEADER: %p\n",&header);
+			//printf("PHDR: %p\n",phdr);
+			free(phdr);
 		}
-
-		printf("HEADER: %p\n",&header);
-		printf("PHDR: %p\n",phdr);
-
+		fclose(file);
 
 	}
-	fclose(file);
+	printf("[!] Done\n");
 }
