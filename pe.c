@@ -3,11 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main()
+int main(int argc, char **argv)
 {
+
+	if (argc < 2) {
+		printf("[!] Usage: %s <ELF>\n",argv[0]);
+		return 0;
+	}
 	Elf64_Ehdr header;
 
-	FILE* file = fopen("./pe", "rb");
+	FILE* file = fopen(argv[1], "rb");
 	if (file) {
 		fread(&header, 1, sizeof(header), file);
 		/*
@@ -90,7 +95,7 @@ int main()
 		
 		fclose(file);
 
-		file = fopen("./pe","rb");
+		file = fopen(argv[1],"rb");
 		if (file) {
 			
 			fseek(file,header.e_phoff,SEEK_CUR);
