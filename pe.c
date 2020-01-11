@@ -55,13 +55,13 @@ int main(int argc, char **argv)
 		printf(" -> 0x%04x\n",header.e_version);
 
 		printf("[+] E_ENTRY\n");
-		printf(" -> %016p\n",header.e_entry);
+		printf(" -> 0x%016x\n",header.e_entry);
 
 		printf("[+] E_PHOFF\n");
-		printf(" -> %016p\n",header.e_phoff);
+		printf(" -> 0x%016x\n",header.e_phoff);
 
 		printf("[+] E_SHOFF\n");
-		printf(" -> %016p\n",header.e_shoff);
+		printf(" -> 0x%016x\n",header.e_shoff);
 
 		printf("[+] E_FLAGS\n");
 		printf(" -> 0x%04x\n",header.e_flags);
@@ -83,17 +83,18 @@ int main(int argc, char **argv)
 
 		printf("[+] E_SHSTRNDX\n");
 		printf(" -> 0x%02x\n",header.e_shstrndx);
+		
+		fclose(file);
 
-		printf("[==============================]\n");
-		printf("[+] Program Headers\n\n");
+		printf("\n[============================]\n");
+		printf("[+] Program Headers\n");
+		printf("[============================]\n");
 		
 		/*
 		 * Get Program Header
 		 * Create pointer to Elf64 header struct
 		 * header start + program header offset member = first PH
 		 */
-		
-		fclose(file);
 
 		file = fopen(argv[1],"rb");
 		if (file) {
@@ -105,22 +106,58 @@ int main(int argc, char **argv)
 			fread(phdr, header.e_phnum ,sizeof(Elf64_Phdr), file);
 
 			for (int i = 0; i < header.e_phnum; i++) {
-				printf("[+] PHeader %d @%p\n",i,phdr[i]);
+				printf("[+] PHeader %d\n",i);
 				printf(" p_type \t-> %08x\n",phdr[i].p_type);
 				printf(" p_flags \t-> %08x\n",phdr[i].p_flags);
-				printf(" p_offset \t-> %016p\n",phdr[i].p_offset);
-				printf(" p_vaddr \t-> %016p\n",phdr[i].p_vaddr);
-				printf(" p_paddr \t-> %016p\n",phdr[i].p_paddr);
-				printf(" p_filesz \t-> %016p\n",phdr[i].p_filesz);
-				printf(" p_memsz \t-> %016p\n",phdr[i].p_memsz);
-				printf(" p_align \t-> %016p\n",phdr[i].p_align);
+				printf(" p_offset \t-> 0x%016x\n",phdr[i].p_offset);
+				printf(" p_vaddr \t-> 0x%016x\n",phdr[i].p_vaddr);
+				printf(" p_paddr \t-> 0x%016x\n",phdr[i].p_paddr);
+				printf(" p_filesz \t-> 0x%016x\n",phdr[i].p_filesz);
+				printf(" p_memsz \t-> 0x%016x\n",phdr[i].p_memsz);
+				printf(" p_align \t-> 0x%016x\n",phdr[i].p_align);
 			}
-
-			//printf("HEADER: %p\n",&header);
-			//printf("PHDR: %p\n",phdr);
 			free(phdr);
+			phdr = NULL;
+			fclose(file);
+			
 		}
-		fclose(file);
+
+		/*
+		 * Section headers
+		 */
+		file = fopen(argv[1],"rb");
+		if (file) {
+			printf("\n[===========================]\n");
+			printf("[+] Section Headers\n");
+			printf("[===========================]\n");
+			fseek(file,header.e_shoff,SEEK_CUR);
+
+			Elf64_Shdr *shdr = malloc(sizeof(Elf64_Shdr)*header.e_shnum);
+			memset(shdr, '\0', sizeof(Elf64_Shdr)*header.e_shnum);
+			fread(shdr, header.e_shnum, sizeof(Elf64_Shdr),file);
+
+			for (int i = 0; i < header.e_shnum; i++) {
+				printf("[+] SHeader %d\n",i);
+				printf(" sh_name \t-> 0x%08x\n",shdr[i].sh_name);
+				printf(" sh_type \t-> 0x%08x\n",shdr[i].sh_type);
+				printf(" sh_flags \t-> 0x%016x\n",shdr[i].sh_flags);
+				printf(" sh_addr \t-> 0x%016x\n",shdr[i].sh_addr);
+				printf(" sh_offset \t-> 0x%016x\n",shdr[i].sh_offset);
+				printf(" sh_size \t-> 0x%016x\n",shdr[i].sh_size);
+				printf(" sh_link \t-> 0x%08x\n",shdr[i].sh_link);
+				printf(" sh_info \t-> 0x%08x\n",shdr[i].sh_info);
+				printf(" sh_addralign \t-> 0x%016x\n",shdr[i].sh_addralign);
+				printf(" sh_entsize \t-> 0x%016x\n",shdr[i].sh_entsize);
+			}
+			free(shdr);
+			shdr = NULL;
+			fclose(file);
+		}
+		
+		/*
+		 * Segment tables
+		 * Segments are defined in the section headers
+		 */
 
 	}
 	printf("[!] Done\n");
