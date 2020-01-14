@@ -32,13 +32,40 @@ char *parseShType(Elf64_Word type) {
 		return "SHT_LOUSER";
 	else if (type == SHT_HIUSER)
 		return "SHT_HIUSER";
+	else if (type == 0x0000000f) // FINI_ARRAY
+		return "FINI_ARRAY";
+	else if (type == 0x0000000e) // INIT_ARRAY
+		return "INIT_ARRAY";
+	else if (type == 0x6ffffffe) // VERNEED
+		return "VERNEED";
+	else if (type == 0x6fffffff) // VERSYM
+		return "VERSYM";
+	else if (type == 0x6ffffff6) // GNU_HASH
+		return "GNU_HASH";
 	else
 		return "UNKNOWN";
 }
 
-void printSymTbl() {
-
+void printSymTbl(void *header, unsigned long section_offset, unsigned long symcount, char *fn) {
+	
+	FILE *file = fopen(fn,"rb");
+	
+	Elf64_Sym *symbol_table = malloc(sizeof(Elf64_Sym) * symcount);
+	fseek(file, section_offset, SEEK_CUR);
+	memset(symbol_table, '\0', sizeof(Elf64_Sym) * symcount);
+	fread(symbol_table, symcount, sizeof(Elf64_Sym), file);
+	printf("\n\t\t[+] Dumping Symbol Table\n\n");
+	for (unsigned long i = 0; i < symcount; i++) {
+		printf("\t\t[?] Symbol Entry: %d\n",i);
+		printf("\t\t\t st_name\t-> 0x%08x\n",symbol_table[i].st_name);
+		printf("\t\t\t st_info\t -> 0x%02x\n",symbol_table[i].st_info);
+		printf("\t\t\t st_other\t -> 0x%02x\n",symbol_table[i].st_other);
+		printf("\t\t\t st_shndx\t -> 0x%02x\n",symbol_table[i].st_shndx);
+		printf("\t\t\t st_value\t -> 0x%016x\n",symbol_table[i].st_value);
+		printf("\t\t\t st_size\t -> 0x%016x\n",symbol_table[i].st_size);
+	}
 }
+
 int main(int argc, char **argv)
 {
 
@@ -131,13 +158,12 @@ int main(int argc, char **argv)
 		 * Create pointer to Elf64 header struct
 		 * header start + program header offset member = first PH
 		 */
-
+		Elf64_Phdr *phdr = malloc(sizeof(Elf64_Phdr)*header.e_phnum);
 		file = fopen(argv[1],"rb");
 		if (file) {
 			
 			fseek(file,header.e_phoff,SEEK_CUR);
 
-			Elf64_Phdr *phdr = malloc(sizeof(Elf64_Phdr)*header.e_phnum);
 			memset(phdr, '\0', sizeof(Elf64_Phdr)*header.e_phnum);
 			fread(phdr, header.e_phnum ,sizeof(Elf64_Phdr), file);
 
@@ -152,8 +178,8 @@ int main(int argc, char **argv)
 				printf(" p_memsz \t-> 0x%016x\n",phdr[i].p_memsz);
 				printf(" p_align \t-> 0x%016x\n",phdr[i].p_align);
 			}
-			free(phdr);
-			phdr = NULL;
+			//free(phdr);
+			//phdr = NULL;
 			fclose(file);
 			
 		}
@@ -184,6 +210,8 @@ int main(int argc, char **argv)
 				printf(" sh_info \t-> 0x%08x\n",shdr[i].sh_info);
 				printf(" sh_addralign \t-> 0x%016x\n",shdr[i].sh_addralign);
 				printf(" sh_entsize \t-> 0x%016x\n",shdr[i].sh_entsize);
+				if (shdr[i].sh_type == SHT_SYMTAB)
+					printSymTbl(&header, shdr[i].sh_offset,(shdr[i].sh_size / shdr[i].sh_entsize),argv[1]);
 			}
 			free(shdr);
 			shdr = NULL;
@@ -194,6 +222,10 @@ int main(int argc, char **argv)
 		 * Segment tables
 		 * Segments are defined in the section headers
 		 */
+		if (phdr != NULL) {
+			free(phdr);
+			phdr = NULL;
+		}
 
 	}
 	/*
