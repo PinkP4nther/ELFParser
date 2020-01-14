@@ -3,6 +3,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *parseShType(Elf64_Word type) {
+	if (type == SHT_NULL)
+		return "SHT_NULL";
+	else if (type == SHT_PROGBITS)
+		return "SHT_PROGBITS";
+	else if (type == SHT_SYMTAB)
+		return "SHT_SYMTAB";
+	else if (type == SHT_STRTAB)
+		return "SHT_STRTAB";
+	else if (type == SHT_RELA)
+		return "SHT_RELA";
+	else if (type == SHT_HASH)
+		return "SHT_HASH";
+	else if (type == SHT_DYNAMIC)
+		return "SHT_DYNAMIC";
+	else if (type == SHT_NOTE)
+		return "SHT_NOTE";
+	else if (type == SHT_NOBITS)
+		return "SHT_NOBITS";
+	else if (type == SHT_REL)
+		return "SHT_REL";
+	else if (type == SHT_SHLIB)
+		return "SHT_SHLIB";
+	else if (type == SHT_DYNSYM)
+		return "SHT_DYNSYM";
+	else if (type == SHT_LOUSER)
+		return "SHT_LOUSER";
+	else if (type == SHT_HIUSER)
+		return "SHT_HIUSER";
+	else
+		return "UNKNOWN";
+}
+
+void printSymTbl() {
+
+}
 int main(int argc, char **argv)
 {
 
@@ -139,7 +175,7 @@ int main(int argc, char **argv)
 			for (int i = 0; i < header.e_shnum; i++) {
 				printf("[+] SHeader %d\n",i);
 				printf(" sh_name \t-> 0x%08x\n",shdr[i].sh_name);
-				printf(" sh_type \t-> 0x%08x\n",shdr[i].sh_type);
+				printf(" sh_type \t-> 0x%08x \t[%s]\n",shdr[i].sh_type,parseShType(shdr[i].sh_type));
 				printf(" sh_flags \t-> 0x%016x\n",shdr[i].sh_flags);
 				printf(" sh_addr \t-> 0x%016x\n",shdr[i].sh_addr);
 				printf(" sh_offset \t-> 0x%016x\n",shdr[i].sh_offset);
@@ -160,5 +196,14 @@ int main(int argc, char **argv)
 		 */
 
 	}
+	/*
+	if (shdr != NULL) {
+		free(shdr);
+		shdr = NULL;
+	}
+	if (phdr != NULL) {
+		free(phdr);
+		phdr = NULL;
+	}*/
 	printf("[!] Done\n");
 }
